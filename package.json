@@ -5,13 +5,14 @@
     "main": "index.js",
     "scripts": {
         "start": "node index.js",
+        "install-lib": "node install-lib.js",
         "migrate:create": "migrate-mongo create",
         "migrate:up": "migrate-mongo up",
         "migrate:down": "migrate-mongo down",
         "migrate:status": "migrate-mongo status"
     },
     "dependencies": {
-        "@M-M-Tech-House/enode-restaurant-package": "file:../enode-restaurant-package",
+        "@M-M-Tech-House/enode-restaurant-package": "1.0.19",
         "cors": "^2.8.5",
         "express": "^4.18.2",
         "migrate-mongo": "^14.0.7",
