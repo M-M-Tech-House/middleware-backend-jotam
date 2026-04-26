@@ -1,3 +1,9 @@
+const moduleAlias = require('module-alias');
+const path = require('path');
+
+// Register alias for internal monorepo packages
+moduleAlias.addAlias('@enode-restaurant', path.join(__dirname, 'node_modules/@M-M-Tech-House/enode-restaurant-package/packages'));
+
 const express = require('express');
 const cors = require('cors');
 const app = express();
