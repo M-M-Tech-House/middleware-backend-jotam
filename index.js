@@ -64,10 +64,23 @@ if (apiMiddleware.app) {
 
 // Mount the middleware at the configured API root (using API_PREFIX per user request)
 const apiPrefix = process.env.API_PREFIX || '/';
-app.use(apiPrefix, middlewareToMount);
 
-console.log(`Successfully mounted "@M-M-Tech-House/enode-restaurant-package" as middleware at prefix "${apiPrefix}".`);
-
+if (middlewareToMount) {
+    app.use(apiPrefix, middlewareToMount);
+    console.log(`Successfully mounted "@M-M-Tech-House/enode-restaurant-package" as middleware at prefix "${apiPrefix}".`);
+    
+    // Add a simple debug route to verify the internal app is reachable
+    app.get('/system/debug', (req, res) => {
+        res.json({
+            status: 'ok',
+            apiPrefix,
+            hasMiddleware: !!middlewareToMount,
+            internalAppRoutes: middlewareToMount.stack ? middlewareToMount.stack.filter(r => r.route).map(r => r.route.path) : 'N/A'
+        });
+    });
+} else {
+    console.error('Critical Error: No middleware found to mount!');
+}
 
 // Export the app for Vercel
 module.exports = app;

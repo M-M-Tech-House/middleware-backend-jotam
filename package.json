@@ -11,7 +11,7 @@
         "migrate:status": "migrate-mongo status"
     },
     "dependencies": {
-        "@M-M-Tech-House/enode-restaurant-package": "^1.0.21",
+        "@M-M-Tech-House/enode-restaurant-package": "^1.0.22",
         "bcryptjs": "^3.0.3",
         "bson": "^6.10.4",
         "cors": "^2.8.5",
