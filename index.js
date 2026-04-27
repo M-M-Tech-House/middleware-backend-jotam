@@ -66,16 +66,24 @@ if (apiMiddleware.app) {
 const apiPrefix = process.env.API_PREFIX || '/';
 
 if (middlewareToMount) {
+    // If apiPrefix is /api and the library also has /api, we might want to mount at / 
+    // to avoid /api/api/ routes. But to be safe, we'll just log it and let the debug endpoint guide the user.
     app.use(apiPrefix, middlewareToMount);
-    console.log(`Successfully mounted "@M-M-Tech-House/enode-restaurant-package" as middleware at prefix "${apiPrefix}".`);
+    console.log(`Successfully mounted library at prefix "${apiPrefix}".`);
     
     // Add a simple debug route to verify the internal app is reachable
     app.get('/system/debug', (req, res) => {
+        // Try to get API_PATH from the library's env handler
+        const libEnv = require('@M-M-Tech-House/enode-restaurant-package/packages/env-variables');
+        
         res.json({
             status: 'ok',
-            apiPrefix,
+            hostApiPrefix: apiPrefix,
+            libraryApiPath: libEnv.API_PATH || 'N/A',
+            fullPathExample: `${apiPrefix}${libEnv.API_PATH || ''}/sale`.replace(/\/+/g, '/'),
             hasMiddleware: !!middlewareToMount,
-            internalAppRoutes: middlewareToMount.stack ? middlewareToMount.stack.filter(r => r.route).map(r => r.route.path) : 'N/A'
+            nodeEnv: process.env.NODE_ENV,
+            cwd: process.cwd()
         });
     });
 } else {
