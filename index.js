@@ -1,7 +1,14 @@
+const moduleAlias = require('module-alias');
+const path = require('path');
+
+// Register alias for internal monorepo packages
+moduleAlias.addAlias('@enode-restaurant', path.join(__dirname, 'node_modules/@M-M-Tech-House/enode-restaurant-package/packages'));
+
 const express = require('express');
 const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 3100;
+const apiMiddleware = require('@M-M-Tech-House/enode-restaurant-package/apps/api');
 
 // Enable CORS at the host level for all routes
 app.use(cors({
@@ -41,70 +48,46 @@ app.get('/system/stats', async (req, res) => {
     }
 });
 
-// Get the library name from environment variable
-let libName = process.env.API_LIB;
 
-if (libName && libName.startsWith('API_LIB=')) {
-    libName = libName.replace('API_LIB=', '');
+if (apiMiddleware.app) {
+    console.log('Detected ".app" property on exported object. Using it.');
+    middlewareToMount = apiMiddleware.app;
+} else if (apiMiddleware.router) {
+    console.log('Detected ".router" property on exported object. Using it.');
+    middlewareToMount = apiMiddleware.router;
+} else if (typeof apiMiddleware === 'function') {
+    middlewareToMount = apiMiddleware;
+    console.log('Detected "function" on exported object. Using it.');
+} else {
+    console.warn(`Warning: The loaded library "@M-M-Tech-House/enode-restaurant-package" does not export a function and no .router/.app property was found.`);
 }
 
-if (!libName) {
-    console.error('FATAL ERROR: API_LIB environment variable is not defined.');
-    console.error('Please set API_LIB to the name of the express-compatible library you want to use.');
-    process.exit(1);
-}
+// Mount the middleware at the configured API root (using API_PREFIX per user request)
+const apiPrefix = process.env.API_PREFIX || '/';
 
-try {
-    console.log(`Attempting to load middleware library: "${libName}"...`);
-
-    let apiMiddleware;
-    try {
-        // Try loading the package directly
-        apiMiddleware = require(libName);
-    } catch (err) {
-        if (err.code === 'MODULE_NOT_FOUND') {
-            console.log(`Failed to load "${libName}" directly. Trying specific entry points...`);
-            // Fallback: Try loading apps/api/index.js if the main entry point is missing
-            try {
-                apiMiddleware = require(`${libName}/apps/api`);
-                console.log(`Successfully loaded from "${libName}/apps/api"`);
-            } catch (fallbackErr) {
-                console.error(`Failed to load from "${libName}/apps/api"`);
-                throw fallbackErr;
-            }
-        } else {
-            throw err;
-        }
-    }
-
-    // Logic to extract the router/app if the export is an object
-    let middlewareToMount = apiMiddleware;
-
-    if (typeof apiMiddleware !== 'function') {
-        if (apiMiddleware.router) {
-            console.log('Detected ".router" property on exported object. Using it.');
-            middlewareToMount = apiMiddleware.router;
-        } else if (apiMiddleware.app) {
-            console.log('Detected ".app" property on exported object. Using it.');
-            middlewareToMount = apiMiddleware.app;
-        } else {
-            console.warn(`Warning: The loaded library "${libName}" does not export a function and no .router/.app property was found.`);
-        }
-    }
-
-    // Mount the middleware at the configured API root (using API_PREFIX per user request)
-    const apiPrefix = process.env.API_PREFIX || '/';
+if (middlewareToMount) {
+    // If apiPrefix is /api and the library also has /api, we might want to mount at / 
+    // to avoid /api/api/ routes. But to be safe, we'll just log it and let the debug endpoint guide the user.
     app.use(apiPrefix, middlewareToMount);
-
-    console.log(`Successfully mounted "${libName}" as middleware at prefix "${apiPrefix}".`);
-
-} catch (error) {
-    console.error(`Failed to load library "${libName}".`);
-    console.error('Error details:', error.message);
-    if (error.code === 'MODULE_NOT_FOUND') {
-        console.error(`\nHint: Make sure to install the library using: npm install ${libName}`);
-    }
-    process.exit(1);
+    console.log(`Successfully mounted library at prefix "${apiPrefix}".`);
+    
+    // Add a simple debug route to verify the internal app is reachable
+    app.get('/system/debug', (req, res) => {
+        // Try to get API_PATH from the library's env handler
+        const libEnv = require('@M-M-Tech-House/enode-restaurant-package/packages/env-variables');
+        
+        res.json({
+            status: 'ok',
+            hostApiPrefix: apiPrefix,
+            libraryApiPath: libEnv.API_PATH || 'N/A',
+            fullPathExample: `${apiPrefix}${libEnv.API_PATH || ''}/sale`.replace(/\/+/g, '/'),
+            hasMiddleware: !!middlewareToMount,
+            nodeEnv: process.env.NODE_ENV,
+            cwd: process.cwd()
+        });
+    });
+} else {
+    console.error('Critical Error: No middleware found to mount!');
 }
 
 // Export the app for Vercel
