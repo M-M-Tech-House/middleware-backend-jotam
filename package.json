@@ -11,7 +11,7 @@
         "migrate:status": "migrate-mongo status"
     },
     "dependencies": {
-        "@M-M-Tech-House/jotam-autopartes-api": "^0.0.2",
+        "@M-M-Tech-House/jotam-autopartes-api": "^0.0.3",
         "bcryptjs": "^3.0.3",
         "bson": "^6.10.4",
         "cors": "^2.8.5",
