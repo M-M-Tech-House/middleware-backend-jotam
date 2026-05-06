@@ -2,13 +2,13 @@ const moduleAlias = require('module-alias');
 const path = require('path');
 
 // Register alias for internal monorepo packages
-moduleAlias.addAlias('@enode-restaurant', path.join(__dirname, 'node_modules/@M-M-Tech-House/enode-restaurant-package/packages'));
+moduleAlias.addAlias('@jotam-autopartes-api', path.join(__dirname, 'node_modules/@M-M-Tech-House/jotam-autopartes-api/packages'));
 
 const express = require('express');
 const cors = require('cors');
 const app = express();
 const port = process.env.PORT || 3100;
-const apiMiddleware = require('@M-M-Tech-House/enode-restaurant-package/apps/api');
+const apiMiddleware = require('@M-M-Tech-House/jotam-autopartes-api/apps/api');
 
 // Enable CORS at the host level for all routes
 app.use(cors({
@@ -59,7 +59,7 @@ if (apiMiddleware.app) {
     middlewareToMount = apiMiddleware;
     console.log('Detected "function" on exported object. Using it.');
 } else {
-    console.warn(`Warning: The loaded library "@M-M-Tech-House/enode-restaurant-package" does not export a function and no .router/.app property was found.`);
+    console.warn(`Warning: The loaded library "@M-M-Tech-House/jotam-autopartes-api" does not export a function and no .router/.app property was found.`);
 }
 
 // Mount the middleware at the configured API root (using API_PREFIX per user request)
@@ -70,12 +70,12 @@ if (middlewareToMount) {
     // to avoid /api/api/ routes. But to be safe, we'll just log it and let the debug endpoint guide the user.
     app.use(apiPrefix, middlewareToMount);
     console.log(`Successfully mounted library at prefix "${apiPrefix}".`);
-    
+
     // Add a simple debug route to verify the internal app is reachable
     app.get('/system/debug', (req, res) => {
         // Try to get API_PATH from the library's env handler
-        const libEnv = require('@M-M-Tech-House/enode-restaurant-package/packages/env-variables');
-        
+        const libEnv = require('@M-M-Tech-House/jotam-autopartes-api/packages/env-variables');
+
         res.json({
             status: 'ok',
             hostApiPrefix: apiPrefix,
